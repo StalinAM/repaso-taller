@@ -1,0 +1,140 @@
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+
+public class EjercicioFragmentos {
+
+    public static void main(String[] args) {
+        try {
+            BufferedImage img1 = ImageIO.read(new File("imagenes/paisaje.jpg"));
+            BufferedImage img2 = ImageIO.read(new File("imagenes/universo.jpg"));
+
+            BufferedImage mascara = crearStencil(img1.getWidth(), img1.getHeight());
+
+            BufferedImage stencil = aplicarStencil(img1, mascara);
+            ImageIO.write(stencil, "jpg", new File("imagenes/Stencil1.jpg"));
+
+            BufferedImage img2Red = redimensionar(img2, img1.getWidth(), img1.getHeight());
+
+            BufferedImage blending = aplicarBlending(stencil, img2Red, 0.6f);
+            ImageIO.write(blending, "jpg", new File("imagenes/Blending1.jpg"));
+
+            BufferedImage resultado = aplicarXOR(blending, img2Red);
+            ImageIO.write(resultado, "jpg", new File("imagenes/ResultadoFinal1.jpg"));
+
+            System.out.println("Proceso terminado.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static BufferedImage crearStencil(int ancho, int alto) {
+        BufferedImage mascara = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = mascara.createGraphics();
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, ancho, alto);
+
+        g.setColor(Color.WHITE);
+        g.fillRect(ancho / 4, alto / 4, ancho / 2, alto / 2);
+
+        g.dispose();
+        return mascara;
+    }
+
+    public static BufferedImage redimensionar(BufferedImage imagen, int ancho, int alto) {
+        BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = salida.createGraphics();
+        g.drawImage(imagen, 0, 0, ancho, alto, null);
+        g.dispose();
+        return salida;
+    }
+
+    public static BufferedImage aplicarStencil(BufferedImage img, BufferedImage mascara) {
+        int ancho = img.getWidth();
+        int alto = img.getHeight();
+        BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+
+        for (int y = 0; y < alto; y++) {
+            for (int x = 0; x < ancho; x++) {
+                int pixelSalida;
+
+                int pixelMascara = mascara.getRGB(x, y);
+                int pixelImagen = img.getRGB(x, y);
+
+                if (pixelMascara == Color.WHITE.getRGB()) {
+                    pixelSalida = pixelImagen;
+                } else {
+                    pixelSalida = Color.BLACK.getRGB();
+                }
+
+                salida.setRGB(x, y, pixelSalida);
+            }
+        }
+
+        return salida;
+    }
+
+    public static BufferedImage aplicarBlending(BufferedImage img1, BufferedImage img2, float alpha) {
+        int ancho = img1.getWidth();
+        int alto = img1.getHeight();
+        BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+
+        for (int y = 0; y < alto; y++) {
+            for (int x = 0; x < ancho; x++) {
+                int p1 = img1.getRGB(x, y);
+                int p2 = img2.getRGB(x, y);
+
+                int r1 = (p1 >> 16) & 0xFF;
+                int g1 = (p1 >> 8) & 0xFF;
+                int b1 = p1 & 0xFF;
+
+                int r2 = (p2 >> 16) & 0xFF;
+                int g2 = (p2 >> 8) & 0xFF;
+                int b2 = p2 & 0xFF;
+
+                int r = (int) (r2 * alpha + r1 * (1 - alpha));
+                int g = (int) (g2 * alpha + g1 * (1 - alpha));
+                int b = (int) (b2 * alpha + b1 * (1 - alpha));
+
+                int pixelSalida = (r << 16) | (g << 8) | b;
+                salida.setRGB(x, y, pixelSalida);
+            }
+        }
+
+        return salida;
+    }
+
+    public static BufferedImage aplicarXOR(BufferedImage img1, BufferedImage img2) {
+        int ancho = img1.getWidth();
+        int alto = img1.getHeight();
+        BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+
+        for (int y = 0; y < alto; y++) {
+            for (int x = 0; x < ancho; x++) {
+                int p1 = img1.getRGB(x, y);
+                int p2 = img2.getRGB(x, y);
+
+                int r1 = (p1 >> 16) & 0xFF;
+                int g1 = (p1 >> 8) & 0xFF;
+                int b1 = p1 & 0xFF;
+
+                int r2 = (p2 >> 16) & 0xFF;
+                int g2 = (p2 >> 8) & 0xFF;
+                int b2 = p2 & 0xFF;
+
+                int r = r1 ^ r2;
+                int g = g1 ^ g2;
+                int b = b1 ^ b2;
+
+                int pixelSalida = (r << 16) | (g << 8) | b;
+                salida.setRGB(x, y, pixelSalida);
+            }
+        }
+
+        return salida;
+    }
+}
