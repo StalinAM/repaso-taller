@@ -14,10 +14,14 @@ public class Tema8 {
             int ancho = paisaje.getWidth();
             int alto = paisaje.getHeight();
 
-            BufferedImage universo = escalar(universoOriginal, ancho, alto);
-            BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage universo = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = universo.createGraphics();
+            g.drawImage(universoOriginal, 0, 0, ancho, alto, null);
+            g.dispose();
 
+            BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
             float[][] zBuffer = new float[ancho][alto];
+
             for (int x = 0; x < ancho; x++) {
                 for (int y = 0; y < alto; y++) {
                     zBuffer[x][y] = Float.POSITIVE_INFINITY;
@@ -32,7 +36,11 @@ public class Tema8 {
             for (int y = 0; y < alto; y++) {
                 for (int x = 0; x < ancho; x++) {
 
-                    pintarSiMasCerca(salida, zBuffer, x, y, paisaje.getRGB(x, y), 10.0f);
+                    int colorPaisaje = paisaje.getRGB(x, y);
+                    if (10.0f < zBuffer[x][y]) {
+                        zBuffer[x][y] = 10.0f;
+                        salida.setRGB(x, y, colorPaisaje);
+                    }
 
                     int dx = x - centroX;
                     int dy = y - centroY;
@@ -40,41 +48,24 @@ public class Tema8 {
                     if (dx * dx + dy * dy <= radio2) {
                         int colorUniverso = universo.getRGB(x, y);
 
-                        if (brilloPromedio(colorUniverso) > 128) {
-                            pintarSiMasCerca(salida, zBuffer, x, y, colorUniverso, 5.0f);
+                        int r = (colorUniverso >> 16) & 0xFF;
+                        int gr = (colorUniverso >> 8) & 0xFF;
+                        int b = colorUniverso & 0xFF;
+                        int brillo = (r + gr + b) / 3;
+
+                        if (brillo > 128 && 5.0f < zBuffer[x][y]) {
+                            zBuffer[x][y] = 5.0f;
+                            salida.setRGB(x, y, colorUniverso);
                         }
                     }
                 }
             }
 
-            ImageIO.write(salida, "png", new File("imagenes/ExamenTema8.png"));
+            ImageIO.write(salida, "png", new File("imagenes/ExamenTema8_1.png"));
             System.out.println("Imagen generada correctamente.");
 
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    private static void pintarSiMasCerca(BufferedImage img, float[][] zBuffer,
-                                         int x, int y, int color, float z) {
-        if (z < zBuffer[x][y]) {
-            zBuffer[x][y] = z;
-            img.setRGB(x, y, color);
-        }
-    }
-
-    private static int brilloPromedio(int argb) {
-        int r = (argb >> 16) & 0xFF;
-        int g = (argb >> 8) & 0xFF;
-        int b = argb & 0xFF;
-        return (r + g + b) / 3;
-    }
-
-    private static BufferedImage escalar(BufferedImage img, int ancho, int alto) {
-        BufferedImage out = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = out.createGraphics();
-        g.drawImage(img.getScaledInstance(ancho, alto, Image.SCALE_FAST), 0, 0, null);
-        g.dispose();
-        return out;
     }
 }
