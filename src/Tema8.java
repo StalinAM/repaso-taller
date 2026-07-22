@@ -11,13 +11,13 @@ public class Tema8 {
             BufferedImage paisaje = ImageIO.read(new File("imagenes/paisaje.jpg"));
             BufferedImage universoOriginal = ImageIO.read(new File("imagenes/universo.jpg"));
 
+            float profundidadPaisaje = 10.0f;
+            float profundidadUniverso = 5.0f;
+
             int ancho = paisaje.getWidth();
             int alto = paisaje.getHeight();
 
-            BufferedImage universo = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = universo.createGraphics();
-            g.drawImage(universoOriginal, 0, 0, ancho, alto, null);
-            g.dispose();
+            BufferedImage universo = escalar(universoOriginal, ancho,alto);
 
             BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_ARGB);
             float[][] zBuffer = new float[ancho][alto];
@@ -36,36 +36,44 @@ public class Tema8 {
             for (int y = 0; y < alto; y++) {
                 for (int x = 0; x < ancho; x++) {
 
-                    int colorPaisaje = paisaje.getRGB(x, y);
-                    if (10.0f < zBuffer[x][y]) {
-                        zBuffer[x][y] = 10.0f;
-                        salida.setRGB(x, y, colorPaisaje);
+                    int pixelPaisaje = paisaje.getRGB(x, y);
+                    if (profundidadPaisaje < zBuffer[x][y]) {
+                        zBuffer[x][y] = profundidadPaisaje;
+                        salida.setRGB(x, y, pixelPaisaje);
                     }
 
                     int dx = x - centroX;
                     int dy = y - centroY;
 
                     if (dx * dx + dy * dy <= radio2) {
-                        int colorUniverso = universo.getRGB(x, y);
+                        int pixelUniverso = universo.getRGB(x, y);
 
-                        int r = (colorUniverso >> 16) & 0xFF;
-                        int gr = (colorUniverso >> 8) & 0xFF;
-                        int b = colorUniverso & 0xFF;
+                        int r = (pixelUniverso >> 16) & 0xFF;
+                        int gr = (pixelUniverso >> 8) & 0xFF;
+                        int b = pixelUniverso & 0xFF;
                         int brillo = (r + gr + b) / 3;
 
-                        if (brillo > 128 && 5.0f < zBuffer[x][y]) {
-                            zBuffer[x][y] = 5.0f;
-                            salida.setRGB(x, y, colorUniverso);
+                        if (brillo > 128 && profundidadUniverso < zBuffer[x][y]) {
+                            zBuffer[x][y] = profundidadUniverso;
+                            salida.setRGB(x, y, pixelUniverso);
                         }
                     }
                 }
             }
 
-            ImageIO.write(salida, "png", new File("imagenes/ExamenTema8_1.png"));
+            ImageIO.write(salida, "png", new File("imagenes/ExamenTema8_2.png"));
             System.out.println("Imagen generada correctamente.");
 
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
+    static BufferedImage escalar(BufferedImage imagen, int ancho, int alto) {
+        BufferedImage salida = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = salida.createGraphics();
+        g.drawImage(imagen, 0, 0, ancho, alto, null);
+        g.dispose();
+        return salida;
+    }
 }
+
